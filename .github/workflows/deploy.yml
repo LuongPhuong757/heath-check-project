@@ -36,6 +36,8 @@ jobs:
           host: ec2-13-213-36-102.ap-southeast-1.compute.amazonaws.com
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
+          key_path: /tmp/ssh_key.pem
+          script_stop: true
           script: |
             # Update system
             sudo yum update -y
@@ -61,6 +63,11 @@ jobs:
             # Add other environment variables here
             EOL
 
+            # Log environment variables
+            echo "=== Environment Variables ==="
+            cat .env
+            echo "==========================="
+
             # Build and run Docker container
             docker build -t health-check-api .
             docker stop health-check-api || true
@@ -71,3 +78,13 @@ jobs:
               --restart unless-stopped \
               --env-file .env \
               health-check-api
+
+            # Check container logs
+            echo "=== Container Logs ==="
+            docker logs health-check-api
+            echo "====================="
+
+            # Check environment variables in container
+            echo "=== Container Environment Variables ==="
+            docker exec health-check-api env
+            echo "====================================="
