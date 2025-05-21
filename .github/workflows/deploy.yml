@@ -31,12 +31,6 @@ jobs:
           echo "EC2_SSH_KEY exists: ${{ secrets.EC2_SSH_KEY != '' }}"
           echo "==========================="
 
-      - name: Debug SSH Key
-        run: |
-          echo "=== SSH Key Content ==="
-          echo "${{ secrets.EC2_SSH_KEY }}"
-          echo "======================"
-
       - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
@@ -44,7 +38,17 @@ jobs:
           chmod 600 ~/.ssh/ec2.pem
           echo "=== SSH Key Setup ==="
           ls -l ~/.ssh/ec2.pem
+          echo "Key format check:"
+          head -n 1 ~/.ssh/ec2.pem
+          echo "Key length:"
+          wc -l ~/.ssh/ec2.pem
           echo "===================="
+
+      - name: Test SSH Connection
+        run: |
+          echo "=== Testing SSH Connection ==="
+          ssh -i ~/.ssh/ec2.pem -o StrictHostKeyChecking=no -v ec2-user@ec2-13-213-36-102.ap-southeast-1.compute.amazonaws.com "echo 'SSH connection successful'"
+          echo "============================"
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
@@ -70,6 +74,14 @@ jobs:
               sudo usermod -a -G docker ec2-user
             fi
 
+            # Start Docker service
+            sudo systemctl start docker
+            sudo systemctl enable docker
+
+            # Add current user to docker group
+            sudo usermod -aG docker $USER
+            newgrp docker
+
             # Create app directory if not exists
             mkdir -p ~/health-check-api
 
@@ -90,10 +102,10 @@ jobs:
             echo "==========================="
 
             # Build and run Docker container
-            docker build -t health-check-api .
-            docker stop health-check-api || true
-            docker rm health-check-api || true
-            docker run -d \
+            sudo docker build -t health-check-api .
+            sudo docker stop health-check-api || true
+            sudo docker rm health-check-api || true
+            sudo docker run -d \
               --name health-check-api \
               -p 3003:3003 \
               --restart unless-stopped \
@@ -102,10 +114,10 @@ jobs:
 
             # Check container logs
             echo "=== Container Logs ==="
-            docker logs health-check-api
+            sudo docker logs health-check-api
             echo "====================="
 
             # Check environment variables in container
             echo "=== Container Environment Variables ==="
-            docker exec health-check-api env
+            sudo docker exec health-check-api env
             echo "====================================="
