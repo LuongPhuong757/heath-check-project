@@ -31,6 +31,21 @@ jobs:
           echo "EC2_SSH_KEY exists: ${{ secrets.EC2_SSH_KEY != '' }}"
           echo "==========================="
 
+      - name: Debug SSH Key
+        run: |
+          echo "=== SSH Key Content ==="
+          echo "${{ secrets.EC2_SSH_KEY }}"
+          echo "======================"
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/ec2.pem
+          chmod 600 ~/.ssh/ec2.pem
+          echo "=== SSH Key Setup ==="
+          ls -l ~/.ssh/ec2.pem
+          echo "===================="
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
