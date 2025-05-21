@@ -23,32 +23,11 @@ jobs:
       - name: Build application
         run: npm run build
 
-      - name: Check AWS Credentials
-        run: |
-          echo "=== AWS Credentials Check ==="
-          echo "AWS_ACCESS_KEY_ID exists: ${{ secrets.AWS_ACCESS_KEY_ID != '' }}"
-          echo "AWS_SECRET_ACCESS_KEY exists: ${{ secrets.AWS_SECRET_ACCESS_KEY != '' }}"
-          echo "EC2_SSH_KEY exists: ${{ secrets.EC2_SSH_KEY != '' }}"
-          echo "==========================="
-
       - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/ec2.pem
           chmod 600 ~/.ssh/ec2.pem
-          echo "=== SSH Key Setup ==="
-          ls -l ~/.ssh/ec2.pem
-          echo "Key format check:"
-          head -n 1 ~/.ssh/ec2.pem
-          echo "Key length:"
-          wc -l ~/.ssh/ec2.pem
-          echo "===================="
-
-      - name: Test SSH Connection
-        run: |
-          echo "=== Testing SSH Connection ==="
-          ssh -i ~/.ssh/ec2.pem -o StrictHostKeyChecking=no -v ec2-user@ec2-13-213-36-102.ap-southeast-1.compute.amazonaws.com "echo 'SSH connection successful'"
-          echo "============================"
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
@@ -96,11 +75,6 @@ jobs:
             # Add other environment variables here
             EOL
 
-            # Log environment variables
-            echo "=== Environment Variables ==="
-            cat .env
-            echo "==========================="
-
             # Build and run Docker container
             sudo docker build -t health-check-api .
             sudo docker stop health-check-api || true
@@ -111,13 +85,3 @@ jobs:
               --restart unless-stopped \
               --env-file .env \
               health-check-api
-
-            # Check container logs
-            echo "=== Container Logs ==="
-            sudo docker logs health-check-api
-            echo "====================="
-
-            # Check environment variables in container
-            echo "=== Container Environment Variables ==="
-            sudo docker exec health-check-api env
-            echo "====================================="
