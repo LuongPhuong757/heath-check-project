@@ -23,6 +23,14 @@ jobs:
       - name: Build application
         run: npm run build
 
+      - name: Check AWS Credentials
+        run: |
+          echo "=== AWS Credentials Check ==="
+          echo "AWS_ACCESS_KEY_ID exists: ${{ secrets.AWS_ACCESS_KEY_ID != '' }}"
+          echo "AWS_SECRET_ACCESS_KEY exists: ${{ secrets.AWS_SECRET_ACCESS_KEY != '' }}"
+          echo "EC2_SSH_KEY exists: ${{ secrets.EC2_SSH_KEY != '' }}"
+          echo "==========================="
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
@@ -36,8 +44,6 @@ jobs:
           host: ec2-13-213-36-102.ap-southeast-1.compute.amazonaws.com
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
-          key_path: /tmp/ssh_key.pem
-          script_stop: true
           script: |
             # Update system
             sudo yum update -y
