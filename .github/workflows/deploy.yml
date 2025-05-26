@@ -23,6 +23,12 @@ jobs:
       - name: Build application
         run: npm run build
 
+      - name: Run linting
+        run: npm run lint
+
+      - name: Run unit tests
+        run: npm run test
+
       - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
