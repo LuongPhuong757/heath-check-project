@@ -97,13 +97,6 @@ jobs:
             sudo usermod -aG docker $USER
             newgrp docker
 
-            # Login to DockerHub
-            echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
-
-            # Create app directory if not exists
-            mkdir -p ~/health-check-api
-            cd ~/health-check-api
-
             # Create .env file
             cat > .env << EOL
             PORT=3003
