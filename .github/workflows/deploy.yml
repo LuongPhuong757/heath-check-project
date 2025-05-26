@@ -29,13 +29,36 @@ jobs:
       - name: Run unit tests
         run: npm run test
 
-  deploy-to-ec2:
+  build-and-push-docker:
     needs: build-and-test
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v3
 
+      - name: Login to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/health-check-api:latest
+          cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/health-check-api:buildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/health-check-api:buildcache,mode=max
+
+  deploy-to-ec2:
+    needs: build-and-push-docker
+    runs-on: ubuntu-latest
+
+    steps:
       - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
@@ -74,12 +97,12 @@ jobs:
             sudo usermod -aG docker $USER
             newgrp docker
 
+            # Login to DockerHub
+            echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
+
             # Create app directory if not exists
             mkdir -p ~/health-check-api
-
-            # Copy files from GitHub
             cd ~/health-check-api
-            git pull origin main || git clone https://github.com/LuongPhuong757/heath-check-project.git .
 
             # Create .env file
             cat > .env << EOL
@@ -88,13 +111,13 @@ jobs:
             # Add other environment variables here
             EOL
 
-            # Build and run Docker container
-            sudo docker build -t health-check-api .
-            sudo docker stop health-check-api || true
-            sudo docker rm health-check-api || true
-            sudo docker run -d \
+            # Pull and run Docker container
+            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/health-check-api:latest
+            docker stop health-check-api || true
+            docker rm health-check-api || true
+            docker run -d \
               --name health-check-api \
               -p 3003:3003 \
               --restart unless-stopped \
               --env-file .env \
-              health-check-api
+              ${{ secrets.DOCKERHUB_USERNAME }}/health-check-api:latest
