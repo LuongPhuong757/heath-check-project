@@ -9,9 +9,9 @@ import { HealthModule } from './health/health.module';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-    HealthModule
+    HealthModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService],      
 })
-export class AppModule {} 
+export class AppModule {}
