@@ -13,7 +13,7 @@ export class HealthController {
       type: 'object',
       properties: {
         status: { type: 'string', example: 'ok' },
-        message: { type: 'string', example: 'Service is healthy' },
+        message: { type: 'string', example: 'Service is healthy !!!!!!!!!!' },
         timestamp: { type: 'string', example: '2024-03-21T10:00:00.000Z' },
       },
     },
